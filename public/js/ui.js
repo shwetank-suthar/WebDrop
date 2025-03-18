@@ -260,7 +260,8 @@ function handleConnectionParams() {
                 const peerInput = document.getElementById('peerInput');
                 if (peerInput && connectButton) {
                     peerInput.value = peerId;
-                    connectButton.click();
+                    // connectButton.click();
+                    connectToPeer(peerId);
                 }
             }, 1000);
         }

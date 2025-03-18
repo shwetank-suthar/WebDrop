@@ -50,6 +50,7 @@ const QRCodeComponent = ({ url }) => {
     );
 };
 
+
 // Initialize QR Code
 window.initQRCode = function(url) {
     const root = document.getElementById('qrRoot');
