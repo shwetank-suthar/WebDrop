@@ -10,7 +10,17 @@ function initializePeer() {
     const host = window.location.hostname;
     const port = window.location.port || (protocol === 'https' ? 443 : 80);
 
-    peer = new Peer(null, {
+    function generateRandomId(length) {
+        // const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        const characters = '0123456789';
+        let result = '';
+        for (let i = 0; i < length; i++) {
+            result += characters.charAt(Math.floor(Math.random() * characters.length));
+        }
+        return result;
+    }
+
+    peer = new Peer(generateRandomId(6), {
         host: host,
         port: port,
         path: '/',
