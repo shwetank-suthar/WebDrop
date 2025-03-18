@@ -8,7 +8,7 @@ function setupUI() {
     fetch('/network-info')
         .then(response => response.json())
         .then(info => {
-            const networkUrl = 'https://webdrop-qu29.onrender.com';
+            const networkUrl = 'https://webdrop.in';
             document.getElementById('networkUrl').textContent = networkUrl;
             
              // Setup network URL copy button
@@ -154,7 +154,7 @@ function createQRCode(baseUrl) {
     }
 
     // Create connection URL with peer ID
-    const connectionUrl = 'https://webdrop-qu29.onrender.com?connect=' + encodeURIComponent(peerId);
+    const connectionUrl = 'https://webdrop.in?connect=' + encodeURIComponent(peerId);
 
     const qrContainer = document.getElementById('qrRoot');
     qrContainer.innerHTML = '';
