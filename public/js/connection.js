@@ -156,7 +156,7 @@ function generateQRCode() {
         return;
     }
 
-    const qrContainer = document.getElementById('qrCode');
+    const qrContainer = document.getElementById('qrRoot');
     qrContainer.innerHTML = '';
     
     // Get the full URL for the QR code
