@@ -2,13 +2,9 @@ function setupFileTransfer() {
     const dropZone = document.getElementById('dropZone');
     const fileInput = document.getElementById('fileInput');
 
-    // Click handler
     dropZone.addEventListener('click', () => fileInput.click());
-
-    // File selection handler
     fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
 
-    // Drag & drop handlers
     dropZone.addEventListener('dragover', (e) => {
         e.preventDefault();
         dropZone.classList.add('drag-over');
@@ -43,37 +39,17 @@ async function handleFiles(files) {
                 detail: { fileName: file.name }
             }));
 
-            const reader = new FileReader();
-            
-            await new Promise((resolve, reject) => {
-                reader.onload = async (e) => {
-                    try {
-                        await sendFile(file, e.target.result);
-                        transferredSize += file.size;
-                        const progress = Math.round((transferredSize / totalSize) * 100);
-                        dispatchProgressEvent(progress);
-                        
-                        window.dispatchEvent(new CustomEvent('transfer-complete', {
-                            detail: { fileName: file.name }
-                        }));
-                        
-                        resolve();
-                    } catch (err) {
-                        reject(err);
-                    }
-                };
-                
-                reader.onerror = () => {
-                    window.dispatchEvent(new CustomEvent('transfer-error', {
-                        detail: { fileName: file.name, error: 'Failed to read file' }
-                    }));
-                    reject(new Error('Error reading file'));
-                };
-                reader.readAsArrayBuffer(file);
+            await sendFile(file, (chunkSize, totalChunks) => {
+                transferredSize += chunkSize;
+                const progress = Math.round((transferredSize / totalSize) * 100);
+                dispatchProgressEvent(progress);
             });
+
+            window.dispatchEvent(new CustomEvent('transfer-complete', {
+                detail: { fileName: file.name }
+            }));
         }
-        
-        // Transfer complete
+
         dispatchProgressEvent(100);
         setTimeout(() => dispatchProgressEvent(0), 1000);
     } catch (err) {
@@ -85,41 +61,42 @@ async function handleFiles(files) {
     }
 }
 
-function sendFile(file, data) {
-    return new Promise((resolve, reject) => {
-        try {
-            // Send file metadata first
-            conn.send({
-                type: 'file-meta',
-                name: file.name,
-                size: file.size,
-                mimeType: file.type
-            });
+async function sendFile(file, onProgress) {
+    const chunkSize = 16 * 1024; // 16KB chunks
+    const totalChunks = Math.ceil(file.size / chunkSize);
 
-            // Send file data in chunks
-            const chunkSize = 16384; // 16KB chunks
-            const totalChunks = Math.ceil(data.byteLength / chunkSize);
-            
-            for (let i = 0; i < totalChunks; i++) {
-                const chunk = data.slice(i * chunkSize, (i + 1) * chunkSize);
-                conn.send({
-                    type: 'file-chunk',
-                    data: chunk,
-                    chunk: i,
-                    final: i === totalChunks - 1
-                });
-            }
-
-            resolve();
-        } catch (err) {
-            reject(err);
-        }
+    conn.send({
+        type: 'file-meta',
+        name: file.name,
+        size: file.size,
+        mimeType: file.type
     });
+
+    const stream = file.stream();
+    const reader = stream.getReader();
+
+    let chunkIndex = 0;
+    let transferredSize = 0;
+
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        conn.send({
+            type: 'file-chunk',
+            data: value,
+            chunk: chunkIndex,
+            final: chunkIndex === totalChunks - 1
+        });
+
+        transferredSize += value.byteLength;
+        onProgress(value.byteLength, totalChunks);
+        chunkIndex++;
+    }
 }
 
 function handleIncomingData(data) {
     if (data.type === 'file-meta') {
-        // Start receiving a new file
         window.currentFile = {
             name: data.name,
             size: data.size,
@@ -127,28 +104,23 @@ function handleIncomingData(data) {
             chunks: [],
             receivedSize: 0
         };
-        
+
         window.dispatchEvent(new CustomEvent('transfer-start', {
             detail: { fileName: data.name }
         }));
     } else if (data.type === 'file-chunk') {
-        // Append chunk to current file
         if (window.currentFile) {
             window.currentFile.chunks.push(data.data);
             window.currentFile.receivedSize += data.data.byteLength;
 
-            // Calculate and dispatch progress
             const progress = Math.round((window.currentFile.receivedSize / window.currentFile.size) * 100);
             dispatchProgressEvent(progress);
 
             if (data.final) {
-                // File transfer complete, download it
                 downloadFile(window.currentFile);
-                
                 window.dispatchEvent(new CustomEvent('transfer-complete', {
                     detail: { fileName: window.currentFile.name }
                 }));
-                
                 window.currentFile = null;
                 setTimeout(() => dispatchProgressEvent(0), 1000);
             }
@@ -172,5 +144,4 @@ function dispatchProgressEvent(progress) {
     }));
 }
 
-// Initialize file transfer
 window.addEventListener('load', setupFileTransfer);
