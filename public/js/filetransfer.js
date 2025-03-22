@@ -2,14 +2,8 @@ function setupFileTransfer() {
     const dropZone = document.getElementById('dropZone');
     const fileInput = document.getElementById('fileInput');
 
-    // Prevent page reload on file input click
-    fileInput.addEventListener('click', (e) => e.stopPropagation());
-
     // Click handler
-    dropZone.addEventListener('click', (e) => {
-        e.preventDefault();
-        fileInput.click();
-    });
+    dropZone.addEventListener('click', () => fileInput.click());
 
     // File selection handler
     fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
@@ -81,7 +75,7 @@ async function sendFile(file, totalSize, onProgress) {
         mimeType: file.type
     });
 
-    const chunkSize = 16384; // 16KB chunks
+    const chunkSize = 64 * 1024; // 64KB chunks
     let offset = 0;
 
     while (offset < file.size) {
@@ -117,8 +111,9 @@ function handleIncomingData(data) {
     } else if (data.type === 'file-chunk') {
         // Append chunk to current file
         if (window.currentFile) {
-            window.currentFile.chunks.push(data.data);
-            window.currentFile.receivedSize += data.data.byteLength;
+            const chunkArray = new Uint8Array(data.data);
+            window.currentFile.chunks.push(chunkArray);
+            window.currentFile.receivedSize += chunkArray.byteLength;
 
             // Calculate and dispatch progress
             const progress = Math.round((window.currentFile.receivedSize / window.currentFile.size) * 100);
