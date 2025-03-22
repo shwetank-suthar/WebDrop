@@ -49,36 +49,17 @@ async function handleFiles(files) {
                 detail: { fileName: file.name }
             }));
 
-            const reader = new FileReader();
-            
-            await new Promise((resolve, reject) => {
-                reader.onload = async (e) => {
-                    try {
-                        await sendFile(file, e.target.result);
-                        transferredSize += file.size;
-                        const progress = Math.round((transferredSize / totalSize) * 100);
-                        dispatchProgressEvent(progress);
-                        
-                        window.dispatchEvent(new CustomEvent('transfer-complete', {
-                            detail: { fileName: file.name }
-                        }));
-                        
-                        resolve();
-                    } catch (err) {
-                        reject(err);
-                    }
-                };
-                
-                reader.onerror = () => {
-                    window.dispatchEvent(new CustomEvent('transfer-error', {
-                        detail: { fileName: file.name, error: 'Failed to read file' }
-                    }));
-                    reject(new Error('Error reading file'));
-                };
-                reader.readAsArrayBuffer(file);
+            await sendFile(file, totalSize, (progress) => {
+                transferredSize += progress;
+                const overallProgress = Math.round((transferredSize / totalSize) * 100);
+                dispatchProgressEvent(overallProgress);
             });
+
+            window.dispatchEvent(new CustomEvent('transfer-complete', {
+                detail: { fileName: file.name }
+            }));
         }
-        
+
         // Transfer complete
         dispatchProgressEvent(100);
         setTimeout(() => dispatchProgressEvent(0), 1000);
@@ -91,36 +72,32 @@ async function handleFiles(files) {
     }
 }
 
-function sendFile(file, data) {
-    return new Promise((resolve, reject) => {
-        try {
-            // Send file metadata first
-            conn.send({
-                type: 'file-meta',
-                name: file.name,
-                size: file.size,
-                mimeType: file.type
-            });
-
-            // Send file data in chunks
-            const chunkSize = 16384; // 16KB chunks
-            const totalChunks = Math.ceil(data.byteLength / chunkSize);
-            
-            for (let i = 0; i < totalChunks; i++) {
-                const chunk = data.slice(i * chunkSize, (i + 1) * chunkSize);
-                conn.send({
-                    type: 'file-chunk',
-                    data: chunk,
-                    chunk: i,
-                    final: i === totalChunks - 1
-                });
-            }
-
-            resolve();
-        } catch (err) {
-            reject(err);
-        }
+async function sendFile(file, totalSize, onProgress) {
+    // Send file metadata first
+    conn.send({
+        type: 'file-meta',
+        name: file.name,
+        size: file.size,
+        mimeType: file.type
     });
+
+    const chunkSize = 16384; // 16KB chunks
+    let offset = 0;
+
+    while (offset < file.size) {
+        const chunk = file.slice(offset, offset + chunkSize);
+        const chunkData = await chunk.arrayBuffer();
+
+        conn.send({
+            type: 'file-chunk',
+            data: chunkData,
+            chunk: Math.floor(offset / chunkSize),
+            final: offset + chunkSize >= file.size
+        });
+
+        offset += chunkSize;
+        onProgress(chunkSize);
+    }
 }
 
 function handleIncomingData(data) {
@@ -133,7 +110,7 @@ function handleIncomingData(data) {
             chunks: [],
             receivedSize: 0
         };
-        
+
         window.dispatchEvent(new CustomEvent('transfer-start', {
             detail: { fileName: data.name }
         }));
@@ -150,11 +127,11 @@ function handleIncomingData(data) {
             if (data.final) {
                 // File transfer complete, download it
                 downloadFile(window.currentFile);
-                
+
                 window.dispatchEvent(new CustomEvent('transfer-complete', {
                     detail: { fileName: window.currentFile.name }
                 }));
-                
+
                 window.currentFile = null;
                 setTimeout(() => dispatchProgressEvent(0), 1000);
             }
