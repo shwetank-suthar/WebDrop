@@ -35,50 +35,25 @@ function initializePeer() {
     peer = new Peer(generateRandomId(6), {
         host: host,
         port: port,
-        path: '/peerjs',
-        secure: window.location.protocol === 'https:',
+        path: '/',
         debug: 3,
         config: {
             'iceServers': [
                 { urls: 'stun:stun.l.google.com:19302' },
                 { urls: 'stun:stun1.l.google.com:19302' }
-            ],
-            'sdpSemantics': 'unified-plan'
-        },
-        referrerPolicy: 'strict-origin-when-cross-origin'
+            ]
+        }
     });
 
     console.log('Initializing peer connection...', {
         host: host,
         port: port,
-        path: '/peerjs'
+        path: '/'
     });
 
     peer.on('open', handlePeerOpen);
     peer.on('connection', handleIncomingConnection);
-    peer.on('error', (error) => {
-        console.error('PeerJS Error:', error);
-        
-        // Handle specific error types
-        switch(error.type) {
-            case 'peer-unavailable':
-                showNotification('Peer server unavailable. Trying again...', 'error');
-                setTimeout(initializePeer, 3000);
-                break;
-            case 'network':
-                showNotification('Network error. Check your connection.', 'error');
-                setTimeout(initializePeer, 5000);
-                break;
-            case 'webrtc':
-                showNotification('WebRTC not supported. Try a different browser.', 'error');
-                break;
-            default:
-                showNotification(`Connection error (${error.type})`, 'error');
-                setTimeout(initializePeer, 3000);
-        }
-        
-        updateConnectionStatus(false);
-    });
+    peer.on('error', handlePeerError);
 
     // Check for connection parameters after peer is initialized
     if (typeof handleConnectionParams === 'function') {
@@ -110,6 +85,18 @@ function handleIncomingConnection(connection) {
     console.log('Incoming connection from:', connection.peer);
     conn = connection;
     setupConnection();
+}
+
+function handlePeerError(err) {
+    console.error('Peer error:', err);
+    updateConnectionStatus(false);
+    window.dispatchEvent(new Event('connection-error'));
+
+    // Attempt to reinitialize on error
+    setTimeout(() => {
+        console.log('Attempting to reinitialize peer connection...');
+        initializePeer();
+    }, 5000);
 }
 
 function setupConnection() {
