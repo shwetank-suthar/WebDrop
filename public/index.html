@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="google-adsense-account" content="ca-pub-2217829108792212">
+    <title>WebDrop - Instant File Sharing</title>
+    <meta name="description" content="Share files securely with anyone, anywhere. No signup required.">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/pages.css">
+    <!-- Add React and ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@17/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js"></script>
+    <!-- Add Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+   
+</head>
+<body>
+    <div class="stars"></div>
+    <div class="twinkling"></div>
+    
+    <div id="notification" class="notification"></div>
+    
+    <div class="container">
+        <header>
+            <div class="logo-container">
+                <div class="logo">
+                    <i class="fas fa-satellite-dish rotating"></i>
+                </div>
+                <div class="logo-text">
+                    <h1>WebDrop</h1>
+                    <p class="tagline">Secure P2P Transfer</p>
+                </div>
+            </div>
+            <nav class="main-nav">
+                <a href="/" class="nav-link active"><i class="fas fa-home"></i> Home</a>
+                <a href="/pages/about.html" class="nav-link"><i class="fas fa-info-circle"></i> About</a>
+                <a href="/pages/how-it-works.html" class="nav-link"><i class="fas fa-question-circle"></i> How It Works</a>
+            </nav>
+            <div class="connection-status">
+                <div class="pulse-ring"></div>
+                <span id="statusText">Searching for peers...</span>
+                <div class="status-indicator" id="statusIndicator"></div>
+            </div>
+        </header>
+
+
+        <main>
+            <div class="floating-card network-info">
+                <div class="card-glow"></div>
+                <i class="fas fa-network-wired card-icon"></i>
+                <h2>Network Connection</h2>
+                <p>Access WebDrop at:</p>
+                <div class="network-link">
+                    <span id="networkUrl"></span>
+                    <button id="copyNetworkUrl" class="icon-button" title="Copy link">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                </div>
+                
+            </div>
+
+            <div class="floating-card drop-zone" id="dropZone">
+                <div class="card-glow"></div>
+                <div class="upload-area">
+                    <i class="fas fa-cloud-upload-alt bounce"></i>
+                    <h2>Beam Your Files</h2>
+                    <p>Drag & drop files or click to select</p>
+                    <input type="file" id="fileInput" hidden multiple>
+                </div>
+                <div class="transfer-progress">
+                    <div class="transfer-status">
+                        <i class="fas fa-satellite-dish rotating"></i>
+                        <p>Beaming files...</p>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-bar-fill"></div>
+                        <div class="progress-particles"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- <script async="async" data-cfasync="false" src="//pl26185049.effectiveratecpm.com/38367614d83d1ac55417c9356c969b43/invoke.js"></script>
+            <div id="container-38367614d83d1ac55417c9356c969b43"></div> -->
+
+            <script type="text/javascript">
+                atOptions = {
+                    'key' : '238980d46e287d47260b0a21346a3d14',
+                    'format' : 'iframe',
+                    'height' : 50,
+                    'width' : 320,
+                    'params' : {}
+                };
+            </script>
+            <script type="text/javascript" src="//www.highperformanceformat.com/238980d46e287d47260b0a21346a3d14/invoke.js"></script>
+
+            <div class="connection-panel">
+                <div class="floating-card qr-section">
+                    <div class="card-glow"></div>
+                    <h2>Quick Connect</h2>
+                    <div id="qrRoot" class="qr-container"></div>
+                    <p>Scan QR code to connect instantly</p>
+                </div>
+
+
+                <div class="floating-card peer-section">
+                    <div class="card-glow"></div>
+                    <i class="fas fa-project-diagram card-icon"></i>
+                    <h2>Peer Connection</h2>
+                    <div class="id-container">
+                        <div class="peer-id">
+                            <label>Your ID</label>
+                            <div class="id-display">
+                                <span id="peerId"></span>
+                                <button id="copyId" class="icon-button" title="Copy ID">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="connect-container">
+                        <div class="input-group">
+                            <i class="fas fa-link"></i>
+                            <input type="text" id="peerInput" placeholder="Enter peer ID to connect">
+                        </div>
+                        <button id="connectButton" class="glow-button">
+                            <i class="fas fa-plug"></i>
+                            Connect
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Add messaging section -->
+        <section class="messaging-section">
+            <h2>Chat <span id="chatStatus" class="status offline">Offline</span></h2>
+            
+            <div id="notifications" class="notifications"></div>
+            
+            <div id="messages" class="messages"></div>
+            
+            <form id="messageForm" class="message-form">
+                <input type="text" id="messageInput" placeholder="Type your message..." required>
+                <button type="submit">Send</button>
+                <button type="button" id="copyMessage" title="Copy last message">📋</button>
+            </form>
+        </section>
+
+        <!-- <script type="text/javascript">
+            atOptions = {
+                'key' : 'a135ad9b5f0df050683a0018b88c738c',
+                'format' : 'iframe',
+                'height' : 50,
+                'width' : 400,
+                'params' : {}
+            };
+        </script>
+        <script type="text/javascript" src="//www.highperformanceformat.com/a135ad9b5f0df050683a0018b88c738c/invoke.js"></script>
+         -->
+         <script async="async" data-cfasync="false" src="//pl26185049.profitableratecpm.com/38367614d83d1ac55417c9356c969b43/invoke.js"></script>
+         <div id="container-38367614d83d1ac55417c9356c969b43"></div>
+
+        <footer>
+            <nav class="footer-nav">
+                <a href="/pages/privacy-policy.html">Privacy Policy</a>
+                <a href="/pages/terms-of-service.html">Terms of Service</a>
+            </nav>
+            <p><i class="fas fa-shield-alt"></i> End-to-end encrypted · No server storage · Direct P2P transfer</p>
+        </footer>
+    </div>
+
+    <script src="https://unpkg.com/peerjs@1.5.1/dist/peerjs.min.js"></script>
+    <script type="text/babel" src="/js/qr-component.js"></script>
+    <script src="/js/connection.js"></script>
+    <script src="/js/filetransfer.js"></script>
+    <script src="/js/ui.js"></script>
+    <script src="/js/messaging.js"></script>
+</body>
+</html>
