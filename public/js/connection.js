@@ -52,8 +52,10 @@ function initializePeer() {
 function handlePeerOpen(id) {
     console.log('Connected to server with ID:', id);
     document.getElementById('peerId').textContent = id;
-    generateQRCode();
     updateConnectionStatus(false);
+    
+    // Trigger QR code generation via event (ui.js will handle it)
+    window.dispatchEvent(new CustomEvent('peer-id-ready', { detail: { peerId: id } }));
     
     // Setup copy ID button
     const copyButton = document.getElementById('copyId');
@@ -148,29 +150,6 @@ function updateConnectionStatus(connected) {
     window.dispatchEvent(new CustomEvent('connection-status', {
         detail: { connected }
     }));
-}
-
-function generateQRCode() {
-    if (!peer || !peer.id) {
-        console.error('Peer ID not available');
-        return;
-    }
-
-    const qrContainer = document.getElementById('qrRoot');
-    qrContainer.innerHTML = '';
-    
-    // Get the full URL for the QR code
-    const url = new URL(window.location.href);
-    url.searchParams.set('connect', peer.id);
-    
-    new QRCode(qrContainer, {
-        text: url.toString(),
-        width: 128,
-        height: 128,
-        colorDark: '#2196F3',
-        colorLight: '#ffffff',
-        correctLevel: QRCode.CorrectLevel.H
-    });
 }
 
 function checkUrlParams() {

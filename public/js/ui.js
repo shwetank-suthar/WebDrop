@@ -65,12 +65,31 @@ function setupUI() {
             }
 
             // Create custom QR code with gradient effect
-            createQRCode(networkUrl);
+            // Wait for peer ID to be available
+            const checkPeerIdAndCreateQR = () => {
+                const peerId = document.getElementById('peerId').textContent;
+                if (peerId) {
+                    createQRCode(networkUrl);
+                } else {
+                    setTimeout(checkPeerIdAndCreateQR, 500);
+                }
+            };
+            checkPeerIdAndCreateQR();
         })
         .catch(err => {
             console.error('Failed to get network info:', err);
             document.querySelector('.network-info').style.display = 'none';
         });
+
+    // Listen for peer ID ready event
+    window.addEventListener('peer-id-ready', () => {
+        const peerId = document.getElementById('peerId').textContent;
+        if (peerId) {
+            // Use current URL for QR code generation
+            const currentUrl = window.location.href.split('?')[0]; // Remove existing query params
+            createQRCode(currentUrl);
+        }
+    });
 
     // Connect button handler
     connectButton.addEventListener('click', () => {
@@ -153,8 +172,10 @@ function createQRCode(baseUrl) {
         return;
     }
 
-    // Create connection URL with peer ID
-    const connectionUrl = 'https://webdrop.in?connect=' + encodeURIComponent(peerId);
+    // Create connection URL with peer ID using current page URL
+    const currentUrl = new URL(window.location.href);
+    currentUrl.searchParams.set('connect', peerId);
+    const connectionUrl = currentUrl.toString();
 
     const qrContainer = document.getElementById('qrRoot');
     qrContainer.innerHTML = '';
